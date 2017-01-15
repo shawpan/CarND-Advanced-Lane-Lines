@@ -5,7 +5,7 @@ import pickle
 import os
 
 class Calibration:
-    """ Calibrate images using chessbiard images
+    """ Calibrate images using chessboard images
 
     Attributes:
         dir: directory path of calibration images
