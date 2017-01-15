@@ -9,8 +9,6 @@ class Calibration:
 
     Attributes:
         dir: directory path of calibration images
-        objpoints: co-ordinates of undistorted image points
-        imgpoints: co-ordinates of the corresponding distorted image points
     """
 
     def __init__(self, dir, nx, ny):
@@ -32,7 +30,7 @@ class Calibration:
             Tuple of object points and corresponding image points in two separate arrays
             example: (objpoints, imgpoints)
         """
-        # If calibration data exists the return
+        # If calibration data exists then return
         if os.path.isfile('calibration.p'):
             with open('calibration.p', 'rb') as data_file:
                 data = pickle.load(data_file)
