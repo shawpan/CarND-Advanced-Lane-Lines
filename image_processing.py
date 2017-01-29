@@ -5,7 +5,7 @@ from scipy import signal
 from perspective_transformer import PerspectiveTransformer
 from calibration import Calibration
 
-def undistort(img):
+def undistort(img, objpoints, imgpoints):
     """ Undistort image
     Args:
         img: image in BGR
@@ -14,8 +14,6 @@ def undistort(img):
     Returns:
         Undistorted image
     """
-    calibration = Calibration('camera_cal', 9, 5)
-    objpoints, imgpoints = calibration.calibrate()
     img_size = (img.shape[1], img.shape[0])
     # Do camera calibration given object points and image points
     ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img_size,None,None)
