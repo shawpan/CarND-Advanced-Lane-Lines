@@ -5,71 +5,30 @@ import pickle
 import os
 import ntpath
 import matplotlib.pyplot as plt
-from calibration import Calibration
+from image_processing import *
 
-def undistort(img, objpoints, imgpoints):
-    """ Undistort image
-    Args:
-        img: image in BGR
-        objpoints: correct image points
-        imgpoints: corresponding distorted image points
-    Returns:
-        Undistorted image
-    """
-    img_size = (img.shape[1], img.shape[0])
-    # Do camera calibration given object points and image points
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img_size,None,None)
-    dst = cv2.undistort(img, mtx, dist, None, mtx)
+def process_image(img):
+    src = np.float32([[240,719],[579,450],[712,450],[1165,719]])
+    dst =  np.float32([[300,719],[300,0],[900,0],[900,719]])
+    transformer = PerspectiveTransformer(src, dst)
 
-    return dst
+    undistort_image = undistort(img)
+    processed_image = process_binary(undistort_image)
+    processed_image = transformer.transform(processed_image);
+    left_fit, right_fit, yvals, out_img = find_lanes(processed_image)
+    processed_image = fit_lane(processed_image, undistort_image, yvals, left_fit, right_fit, transformer)
 
-def process_binary(img, thresh_min, thresh_max, s_thresh_min, s_thresh_max):
-    """ Apply color and gradient threshold to undistorted image
-    Args:
-        img: undistorted image in BGR
-        thresh_min: minimum gradient threshold
-        thresh_max: maximum gradient threshold
-        s_thresh_min: minimum color threshold on s channel
-        s_thresh_max: maximum color threshold on s channel
-    Returns:
-        Binary image created by applying color and gradient thresholds
-    """
-    # Convert to HLS color space and separate the S channel
-    hls = cv2.cvtColor(img, cv2.COLOR_BGR2HLS)
-    s_channel = hls[:,:,2]
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # Sobel x
-    sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0) # Take the derivative in x
-    abs_sobelx = np.absolute(sobelx) # Absolute x derivative to accentuate lines away from horizontal
-    scaled_sobel = np.uint8(255*abs_sobelx/np.max(abs_sobelx))
-    # Threshold x gradient
-    sxbinary = np.zeros_like(scaled_sobel)
-    sxbinary[(scaled_sobel >= thresh_min) & (scaled_sobel <= thresh_max)] = 1
-    # Threshold s channel
-    s_binary = np.zeros_like(s_channel)
-    s_binary[(s_channel >= s_thresh_min) & (s_channel <= s_thresh_max)] = 1
-    #color_binary = np.dstack(( np.zeros_like(sxbinary), sxbinary, s_binary))
-    # Combine the two binary thresholds
-    combined_binary = np.zeros_like(sxbinary)
-    combined_binary[(s_binary == 1) | (sxbinary == 1)] = 1
-
-    return combined_binary
+    return processed_image
 
 def find_lane_lines():
-    # Calibrate
-    calibration = Calibration('camera_cal', 9, 5)
-    objpoints, imgpoints = calibration.calibrate()
-    images = glob.glob('test_images/*.jpg')
+    images = glob.glob('test_images/test*.jpg')
     for idx, fname in enumerate(images):
         print('Processing image ', idx)
         image = cv2.imread(fname)
-        # Undistort
-        undistorted_image = undistort(image, objpoints, imgpoints)
-        # Apply thresholds
-        binary_image = process_binary(undistorted_image, 20, 100, 170, 255)
-
+        processed_image = process_image(image)
+        print('Processing done!!! ', idx)
         output_filename = 'output_images/' + ntpath.basename(fname)
-        cv2.imwrite(output_filename, binary_image * 255)
+        cv2.imwrite(output_filename, processed_image)
 
 
 find_lane_lines()
