@@ -92,7 +92,10 @@ def process_binary(img):
     hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
     s_channel = hls[:,:,2]
     s_binary = np.zeros_like(s_channel)
+    # cv2.inRange sets 255 if in range other wise 0
     s_thresh = cv2.inRange(s_channel.astype('uint8'), 175, 250)
+    # set 255 to 1
+    s_binary[(s_thresh == 255)] = 1
 
     combined_binary = np.zeros_like(gray)
     combined_binary[(s_binary == 1) | (sxbinary == 1)] = 1
