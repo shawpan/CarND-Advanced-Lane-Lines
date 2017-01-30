@@ -36,7 +36,7 @@ Each image goes through the following steps implemented in `process_image()` met
 5. Draw the lanes on undistorted image
 
 ###1. Undistort: 
-I have used `undistort()` method of `image_procesing.py` 
+This step is implemented in `undistort()` method of `image_procesing.py` 
 
 ```python
 def undistort(img, objpoints, imgpoints):
@@ -65,7 +65,7 @@ undistort_image = undistort(img, objpoints, imgpoints)
 ![Undistorted Image][undistorted]
 
 ###2. Processing undistorted image to binary: 
-To create a binary image from undistorted image I have used `process_binary()` method of `image_processing.py`. Here, two separate processes are combined to create the thresholded binary. 
+To create a binary image from undistorted image I have implemented `process_binary()` method of `image_processing.py`. Here, two separate processes are combined to create the thresholded binary. 
 
 1. image is converted to gray scale => applied sobel operator on x axis => get the absolute sobel values => scale the values between 0 and 255 => apply binary thesholding between 30 and 150 pixel values
 2. convert the image to HLS color space => extract S channel => get pixels having S values between 175 and 250
@@ -109,7 +109,7 @@ processed_image = process_binary(undistort_image)
 ![Binary Image][binary]
 
 ###3. Perspective transformation: 
-I have used `transform()` method of `PerspectiveTransformer` class in `perspective_transformer.py`. I chose hardcoded source and destination points in the following manner:
+To create a bird eye view of the binary image, I have implemented `transform()` method of `PerspectiveTransformer` class in `perspective_transformer.py`. I chose hardcoded source and destination points in the following manner:
 
 Source and destination points:
 
