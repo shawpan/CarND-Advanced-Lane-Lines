@@ -10,6 +10,7 @@
 [undistorted]: ./doc/undistorted.jpg "Undistorted Image"
 [binary]: ./doc/binary.jpg "Binary Image"
 [birdeyeview]: ./doc/birdeyeview.jpg "Bird eye view Image"
+[final]: ./doc/final.jpg "Final Result"
 
 ##Camera Calibration
 
@@ -150,11 +151,44 @@ Then I did some other stuff and fit my lane lines with a 2nd order polynomial ki
 
 I did this in lines # through # in my code in `my_other_file.py`
 
-####6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
+###6. Draw lanes on image.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+I implemented this in `fit_lane()` method of `image_processing.py`.
+```python
+def fit_lane(warped_img, undist, yvals, left_fitx, right_fitx, transformer):
+    """ Draw lane in image
+    Args:
+        warped_img: binary third eye view image
+        undist: undistorted image
+        yvals: y points of the lane
+        left_fitx: x points of left lane
+        right_fitx: x points of right lane
+        transformer: perspective transformer
+    Returns:
+        undistored image with lanes drawn 
+    """
+    # Create an image to draw the lines on
+    warp_zero = np.zeros_like(warped_img).astype(np.uint8)
+    color_warp = np.dstack((warped_img, warped_img, warped_img))
 
-![alt text][image6]
+    # Recast the x and y points into usable format for cv2.fillPoly()
+    pts_left = np.array([np.transpose(np.vstack([left_fitx, yvals]))])
+    pts_right = np.array([np.flipud(np.transpose(np.vstack([right_fitx, yvals])))])
+    pts = np.hstack((pts_left, pts_right))
+
+    # Draw the lane onto the warped blank image
+    cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
+
+    # Warp the blank back to original image space using inverse perspective matrix (Minv)
+    newwarp = transformer.inverse_transform(color_warp);
+    # cv2.warpPerspective(color_warp, Minv, (image.shape[1], image.shape[0]))
+    # Combine the result with the original image
+    result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
+    return result
+    
+processed_image = fit_lane(bird_eye_view_image, undistort_image, yvals, left_fit, right_fit, transformer)
+```
+![Final result][final]
 
 ---
 
