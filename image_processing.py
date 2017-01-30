@@ -22,6 +22,12 @@ def undistort(img, objpoints, imgpoints):
     return dst
 
 def process_binary(img):
+    """ Process image to generate a sanitized binary image
+    Args:
+        img: undistorted image in BGR
+    Returns:
+        Binary image
+    """
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0)
     abs_sobelx = np.absolute(sobelx)
@@ -43,6 +49,12 @@ def process_binary(img):
     return combined_binary
 
 def find_lanes(img):
+    """ Find lanes from binary bird eye view image
+    Args:
+        img: binary bird eye view image
+    Returns:
+        (left x points, right x points, y points, output image)
+    """
     left_fit , right_fit =[], []
     # img is 1D binary array, so output image will be 3 img
     # multiplied by 255 to scale to 0 - 255 from 0 - 1
@@ -127,6 +139,17 @@ def find_lanes(img):
     return (fit_leftx, fit_rightx, fity, out_img)
 
 def fit_lane(warped_img, undist, yvals, left_fitx, right_fitx, transformer):
+    """ Draw lane in image
+    Args:
+        warped_img: binary third eye view image
+        undist: undistorted image
+        yvals: y points of the lane
+        left_fitx: x points of left lane
+        right_fitx: x points of right lane
+        transformer: perspective transformer
+    Returns:
+        undistored image with lanes drawn 
+    """
     # Create an image to draw the lines on
     warp_zero = np.zeros_like(warped_img).astype(np.uint8)
     color_warp = np.dstack((warped_img, warped_img, warped_img))

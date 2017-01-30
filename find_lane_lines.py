@@ -13,6 +13,10 @@ calibration = Calibration('camera_cal', 9, 5)
 objpoints, imgpoints = calibration.calibrate()
 
 def process_image(img):
+    """ Process each frame
+    Args:
+        img: camera image
+    """
     src = np.float32([[240,719],[579,450],[712,450],[1165,719]])
     dst =  np.float32([[300,719],[300,0],[900,0],[900,719]])
     transformer = PerspectiveTransformer(src, dst)
@@ -25,6 +29,8 @@ def process_image(img):
     return processed_image
 
 def find_lane_lines():
+    """ Find lanes from images or video1
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('--type', help='type i/v')
     args = parser.parse_args()
