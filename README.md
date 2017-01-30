@@ -180,8 +180,7 @@ def fit_lane(warped_img, undist, yvals, left_fitx, right_fitx, transformer):
     cv2.fillPoly(color_warp, np.int_([pts]), (0,255, 0))
 
     # Warp the blank back to original image space using inverse perspective matrix (Minv)
-    newwarp = transformer.inverse_transform(color_warp);
-    # cv2.warpPerspective(color_warp, Minv, (image.shape[1], image.shape[0]))
+    newwarp = transformer.inverse_transform(color_warp)
     # Combine the result with the original image
     result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
     return result
