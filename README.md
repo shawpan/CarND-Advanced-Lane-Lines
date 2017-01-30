@@ -8,6 +8,7 @@
 [calimagechessboard]: ./doc/cal_chessboard.jpg "Undistorted Chessboard Image"
 [distorted]: ./doc/distorted.jpg "Distorted Image"
 [undistorted]: ./doc/undistorted.jpg "Undistorted Image"
+[binary]: ./doc/binary.jpg "Binary Image"
 
 ##Camera Calibration
 
@@ -23,21 +24,87 @@ I have then used the output `objpoints` and `imgpoints` to compute the camera ca
 ###Undistorted chessboard Image
 ![Undistorted chessboard Image][calimagechessboard]
 
-###Distorted Road Image
+##Pipeline (test images)
+Each image goes through the following steps implemented in `process_image()` method of `find_lane_lines.py`
+
+1. Undistort using `objpoints` and `imgpoints` determined from camera calibration
+2. Create binary image using several thresholding methods to make lane lines prominent 
+3. Transform the binary image to bird eye view to make the lane lines significant
+4. Find lane line points from the transformed image
+5. Draw the lanes on undistorted image
+
+###1. Undistort: 
+I have used `undistort()` method of `image_procesing.py` 
+
+```python
+def undistort(img, objpoints, imgpoints):
+    """ Undistort image
+    Args:
+        img: image in BGR
+        objpoints: correct image points
+        imgpoints: corresponding distorted image points
+    Returns:
+        Undistorted image
+    """
+    img_size = (img.shape[1], img.shape[0])
+    # Do camera calibration given object points and image points
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, img_size,None,None)
+    dst = cv2.undistort(img, mtx, dist, None, mtx)
+
+    return dst
+    
+undistort_image = undistort(img, objpoints, imgpoints)
+```
+
+####Distorted Road Image
 ![Distorted Image][distorted]
 
-###Undistorted Road Image
+####Undistorted Road Image
 ![Undistorted Image][undistorted]
 
+###2. Processing undistorted image to binary: 
+To create a binary image from undistorted image I have used `process_binary()` method of `image_processing.py`. Here, two separate processes are combined to create the thresholded binary. 
 
-###Pipeline (single images)
+1. image is converted to gray scale => applied sobel operator on x axis => get the absolute sobel values => scale the values between 0 and 255 => apply binary thesholding between 30 and 150 pixel values
+2. convert the image to HLS color space => extract S channel => get pixels having S values between 175 and 250
+3. combine two binary images
 
-####1. Provide an example of a distortion-corrected image.
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
-![alt text][image2]
-####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
 
+```python
+def process_binary(img):
+    """ Process image to generate a sanitized binary image
+    Args:
+        img: undistorted image in BGR
+    Returns:
+        Binary image
+    """
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+    sobelx = cv2.Sobel(gray, cv2.CV_64F, 1, 0)
+    abs_sobelx = np.absolute(sobelx)
+    scaled_sobel = np.uint8(255*abs_sobelx/np.max(abs_sobelx))
+    sxbinary = np.zeros_like(scaled_sobel)
+    retval, sxthresh = cv2.threshold(scaled_sobel, 30, 150, cv2.THRESH_BINARY)
+    sxbinary[(sxthresh >= 30) & (sxthresh <= 150)] = 1
+
+
+    hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
+    s_channel = hls[:,:,2]
+    s_binary = np.zeros_like(s_channel)
+    s_thresh = cv2.inRange(s_channel.astype('uint8'), 175, 250)
+
+    combined_binary = np.zeros_like(gray)
+    combined_binary[(s_binary == 1) | (sxbinary == 1)] = 1
+
+    return combined_binary
+    
+processed_image = process_binary(undistort_image)
+```
+
+####Undistorted Road Image
+![Undistorted Image][undistorted]
+
+####Binary Image
+![Binary Image][binary]
 
 ####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
