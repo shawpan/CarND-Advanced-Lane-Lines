@@ -133,6 +133,9 @@ transformer = PerspectiveTransformer(src, dst)
 transformed_image = transformer.transform(binary_image)
 ```
 
+####Binary Image
+![Binary Image][binary]
+
 ####Bird Eye View Image
 ![Bird Eye View Image][birdeyeview]
 
