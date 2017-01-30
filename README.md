@@ -1,4 +1,4 @@
-#Advanced Lane Finding Projec
+#Advanced Lane Finding Project
 
 ---
 
