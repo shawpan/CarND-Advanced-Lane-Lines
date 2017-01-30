@@ -1,4 +1,4 @@
-##Advanced Lane Finding Projec
+#Advanced Lane Finding Projec
 
 ---
 
@@ -9,15 +9,7 @@
 [distorted]: ./doc/distorted.jpg "Distorted Image"
 [undistorted]: ./doc/undistorted.jpg "Undistorted Image"
 
-[image1]: ./examples/undistort_output.png "Undistorted"
-[image2]: ./test_images/test1.jpg "Road Transformed"
-[image3]: ./examples/binary_combo_example.jpg "Binary Example"
-[image4]: ./examples/warped_straight_lines.jpg "Warp Example"
-[image5]: ./examples/color_fit_lines.jpg "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
-[video1]: ./project_video.mp4 "Video"
-
-###Camera Calibration
+##Camera Calibration
 
 The code for this step is contained in the `calibrate()` method of `Calibration` class in `calibration.py`.  
 
@@ -25,7 +17,18 @@ I started by preparing "object points", which will be the (x, y, z) coordinates 
 
 I have then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result:
 
-![Chessboard][image1]
+###Distorted chessboard Image
+![Chessboard Image][imagechessboard]
+
+###Undistorted chessboard Image
+![Undistorted chessboard Image][calimagechessboard]
+
+###Distorted Road Image
+![Distorted Image][distorted]
+
+###Undistorted Road Image
+![Undistorted Image][undistorted]
+
 
 ###Pipeline (single images)
 
@@ -35,10 +38,6 @@ To demonstrate this step, I will describe how I apply the distortion correction 
 ####2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
 
-![Chessboard Image][imagechessboard]
-![Undistorted chessboard Image][calimagechessboard]
-![Distorted Image][distorted]
-![Undistorted Image][undistorted]
 
 ####3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
 
