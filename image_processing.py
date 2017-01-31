@@ -40,7 +40,9 @@ def process_binary(img):
     hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
     s_channel = hls[:,:,2]
     s_binary = np.zeros_like(s_channel)
+    # cv2.inRange sets 255 if in range other wise 0
     s_thresh = cv2.inRange(s_channel.astype('uint8'), 175, 250)
+    # set 255 to 1
     s_binary[(s_thresh == 255)] = 1
 
     combined_binary = np.zeros_like(gray)
@@ -148,7 +150,7 @@ def fit_lane(warped_img, undist, yvals, left_fitx, right_fitx, transformer):
         right_fitx: x points of right lane
         transformer: perspective transformer
     Returns:
-        undistored image with lanes drawn 
+        undistored image with lanes drawn
     """
     # Create an image to draw the lines on
     warp_zero = np.zeros_like(warped_img).astype(np.uint8)
@@ -164,7 +166,51 @@ def fit_lane(warped_img, undist, yvals, left_fitx, right_fitx, transformer):
 
     # Warp the blank back to original image space using inverse perspective matrix (Minv)
     newwarp = transformer.inverse_transform(color_warp);
-    # cv2.warpPerspective(color_warp, Minv, (image.shape[1], image.shape[0]))
     # Combine the result with the original image
     result = cv2.addWeighted(undist, 1, newwarp, 0.3, 0)
     return result
+
+def get_curvature(leftx, rightx, ploty):
+    """ Calculate lane curvature
+    Args:
+        leftx: left x points
+        rightx: right x points
+        ploty: y points
+    Returns:
+        left curvature, right curvature of lane and distance of vehicle from center
+    """
+    # Define conversions in x and y from pixels space to meters
+    ym_per_pix = 30/720 # meters per pixel in y dimension
+    xm_per_pix = 3.7/700 # meters per pixel in x dimension
+    y_eval = np.max(ploty)
+    # ploty = np.linspace(0, 719, num=720)
+    # Fit new polynomials to x,y in world space
+    left_fit_cr = np.polyfit(ploty*ym_per_pix, leftx*xm_per_pix, 2)
+    right_fit_cr = np.polyfit(ploty*ym_per_pix, rightx*xm_per_pix, 2)
+    # Calculate the new radii of curvature
+    left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
+    right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
+    # Write dist from center
+    center = 640.
+    lane_x = rightx - leftx
+    center_x = (lane_x / 2.0) + leftx
+    cms_per_pixel = 3.7 / lane_x   # US regulation lane width = 3.7m
+    distance = (center_x - center) * xm_per_pix
+
+    return (left_curverad, right_curverad, np.mean(distance * 100.0))
+
+def draw_stat(img, left_curvature, right_curvature, distance):
+    """ Draw curvature and distance measurements
+    Args:
+        img: resulted image after drawing lanes
+        left_curvature: radius of curve of left line
+        right_curvature: radius of curve of right line
+    Returns:
+        image with measurements written
+    """
+    direction = 'left' if distance < 0 else 'right'
+    cv2.putText(img, 'Radius of Left Curvature = %d(m)' % left_curvature, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    cv2.putText(img, 'Radius of Right Curvature = %d(m)' % right_curvature, (50, 100), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+    cv2.putText(img, 'Vehicle distance from center = %d(cm) %s' % (np.absolute(distance), direction), (50, 150), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+
+    return img;

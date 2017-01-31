@@ -22,9 +22,11 @@ def process_image(img):
     transformer = PerspectiveTransformer(src, dst)
     undistort_image = undistort(img, objpoints, imgpoints)
     processed_image = process_binary(undistort_image)
-    processed_image = transformer.transform(processed_image);
+    processed_image = transformer.transform(processed_image)
     left_fit, right_fit, yvals, out_img = find_lanes(processed_image)
     processed_image = fit_lane(processed_image, undistort_image, yvals, left_fit, right_fit, transformer)
+    left_curvature, right_curvature, distance = get_curvature(left_fit, right_fit, yvals)
+    processed_image = draw_stat(processed_image, left_curvature, right_curvature, distance)
 
     return processed_image
 
@@ -54,3 +56,17 @@ def find_lane_lines():
 
 
 find_lane_lines()
+
+def doc():
+    src = np.float32([[240,719],[579,450],[712,450],[1165,719]])
+    dst =  np.float32([[300,719],[300,0],[900,0],[900,719]])
+    transformer = PerspectiveTransformer(src, dst)
+    image = cv2.imread('doc/distorted.jpg')
+    processed_image = undistort(image, objpoints, imgpoints)
+    processed_image = process_binary(processed_image)
+    # processed_image = transformer.transform(processed_image)
+    # print('wtf')
+    # cv2.imwrite('doc/birdeyeview.jpg', processed_image*255)
+    # print('wtf')
+
+# doc()
