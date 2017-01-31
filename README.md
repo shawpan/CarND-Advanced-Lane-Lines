@@ -345,6 +345,7 @@ Here's a [link to my video result](./output_video/project_video.mp4)
 
 ##Discussion
 
-###1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
-
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+1. Issues:
+Had a hard time finding the combination of binary thresholding processes. There are many options such as color, gradient, gradient magnitude, colorspace etc. It was mainly trial and error. Determining the right source and destination points for perspective transform was tricky too. Destination points will form rectangle but determining the corresponding source points is time consuming. Atlast chose hardcoded values.  
+2. Future:
+Further smoothing on the binary image can be done to reduce noise and remove ouliers. Currently the pipeline shakes a bit in shadows and extra lights. Source points for perspective transform can be determined dynamically. Present points will only work for the given image resolution as well as lane position on the image.
