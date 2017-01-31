@@ -1,5 +1,11 @@
 #Advanced Lane Finding Project
 
+## Demo
+
+<a href="http://www.youtube.com/watch?feature=player_embedded&v=nHipGC-6gzk
+" target="_blank"><img src="http://img.youtube.com/vi/nHipGC-6gzk/0.jpg" 
+alt="Track 1" width="608" border="10" /></a>
+
 ---
 
 [//]: # (Image References)
@@ -198,7 +204,7 @@ processed_image = fit_lane(bird_eye_view_image, undistort_image, yvals, left_fit
 
 ####1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](./output_video/project_video.mp4)
 
 ---
 
