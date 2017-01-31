@@ -16,6 +16,7 @@ alt="Track 1" width="608" border="10" /></a>
 [undistorted]: ./doc/undistorted.jpg "Undistorted Image"
 [binary]: ./doc/binary.jpg "Binary Image"
 [birdeyeview]: ./doc/birdeyeview.jpg "Bird eye view Image"
+[lanes]: ./doc/lanes.jpg "Lanes"
 [final]: ./doc/final.jpg "Final Result"
 
 ##Camera Calibration
@@ -150,15 +151,145 @@ transformed_image = transformer.transform(binary_image)
 ![Bird Eye View Image][birdeyeview]
 
 
-####4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
+###4. Finding Lanes in Bird Eye View Image
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+I implemented lanes finder from bird eye view image in `find_lanes()` method of `image_processing.py`. The main steps are
 
-![alt text][image5]
+1. Generated histogram of lower half of the image.
+2. Divided the histogram in two equal parts, left and right on X axis. We can assume that left line is in left part and right line is in right part.
+3. Determined the highest peak in left and right part. These two initial points gave the idea of the position of left and right lines to search for.
+4. Chose the number of sliding windows to be 9 and determined the window size with `np.int(img.shape[0]/nwindows)` to slide along the initial points on Y axis and width 100 px. 
+5. Chose minimum pixels to search for in each window to be 50.
+6. Extracted non zero/lane pixels from the current window and appended it to left and right lanes.
+7. If the current window has lane pixels more than the minimum threshold recentered the search points 
+7. Repeated the above steps
 
-####5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+```python
+def find_lanes(img):
+    """ Find lanes from binary bird eye view image
+    Args:
+        img: binary bird eye view image
+    Returns:
+        (left x points, right x points, y points, output image)
+    """
+    left_fit , right_fit =[], []
+    # img is 1D binary array, so output image will be 3 img
+    # multiplied by 255 to scale to 0 - 255 from 0 - 1
+    out_img = np.dstack((img, img, img))*255
 
-I did this in lines # through # in my code in `my_other_file.py`
+    histogram = np.sum(img[int(img.shape[0]/2):,:], axis=0)
+    midpoint = np.int(histogram.shape[0]/2)
+    leftx_base = np.argmax(histogram[:midpoint])
+    rightx_base = np.argmax(histogram[midpoint:]) + midpoint
+    # Choose the number of sliding windows
+    nwindows = 9
+    # Set height of windows
+    window_size = np.int(img.shape[0]/nwindows)
+    # Identify the x and y positions of all nonzero pixels in the image
+    nonzero = img.nonzero()
+    nonzeroy = np.array(nonzero[0])
+    nonzerox = np.array(nonzero[1])
+    # Current positions to be updated for each window
+    leftx_current = leftx_base
+    rightx_current = rightx_base
+    # Set the width of the windows +/- margin
+    margin = 100
+    # Set minimum number of pixels found to recenter window
+    minpix = 50
+    # Create empty lists to receive left and right lane pixel indices
+    left_lane_inds = []
+    right_lane_inds = []
+
+    # Step through the windows one by one
+    for window in range(nwindows):
+        # Identify window boundaries in x and y (and right and left)
+        win_y_low = img.shape[0] - (window+1)*window_size
+        win_y_high = img.shape[0] - window*window_size
+        win_xleft_low = leftx_current - margin
+        win_xleft_high = leftx_current + margin
+        win_xright_low = rightx_current - margin
+        win_xright_high = rightx_current + margin
+        # print(win_xleft_low, win_y_low, win_xleft_high, win_y_high)
+        # Draw the windows on the visualization image
+        cv2.rectangle(out_img,(win_xleft_low,win_y_low),(win_xleft_high,win_y_high),(0,255,0), 2)
+        cv2.rectangle(out_img,(win_xright_low,win_y_low),(win_xright_high,win_y_high),(0,255,0), 2)
+        # Identify the nonzero pixels in x and y within the window
+        left_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & (nonzerox >= win_xleft_low) & (nonzerox < win_xleft_high)).nonzero()[0]
+        right_inds = ((nonzeroy >= win_y_low) & (nonzeroy < win_y_high) & (nonzerox >= win_xright_low) & (nonzerox < win_xright_high)).nonzero()[0]
+        # Append these indices to the lists
+        left_lane_inds.append(left_inds)
+        right_lane_inds.append(right_inds)
+        # If you found > minpix pixels, recenter next window on their mean position
+        if len(left_inds) > minpix:
+            leftx_current = np.int(np.mean(nonzerox[left_inds]))
+        if len(right_inds) > minpix:
+            rightx_current = np.int(np.mean(nonzerox[right_inds]))
+
+    # Concatenate the arrays of indices
+    left_lane_inds = np.concatenate(left_lane_inds)
+    right_lane_inds = np.concatenate(right_lane_inds)
+
+    # Extract left and right line pixel positions
+    leftx = nonzerox[left_lane_inds]
+    lefty = nonzeroy[left_lane_inds]
+    rightx = nonzerox[right_lane_inds]
+    righty = nonzeroy[right_lane_inds]
+
+    # Fit a second order polynomial to each
+    left_fit = np.polyfit(lefty, leftx, 2)
+    right_fit = np.polyfit(righty, rightx, 2)
+
+    # Generate x and y values for plotting
+    fity = np.linspace(0, img.shape[0]-1, img.shape[0] )
+    fit_leftx = left_fit[0]*fity**2 + left_fit[1]*fity + left_fit[2]
+    fit_rightx = right_fit[0]*fity**2 + right_fit[1]*fity + right_fit[2]
+
+    out_img[nonzeroy[left_lane_inds], nonzerox[left_lane_inds]] = [255, 0, 0]
+    out_img[nonzeroy[right_lane_inds], nonzerox[right_lane_inds]] = [0, 0, 255]
+
+    return (fit_leftx, fit_rightx, fity, out_img)
+    
+left_fit, right_fit, yvals, out_img = find_lanes(bird_eye_view_image)
+```
+
+####Bird Eye View Image
+![Bird Eye View Image][birdeyeview]
+
+####Lanes
+![Lanes][lanes]
+
+###5. Find Curvature and Distance Measurements
+I implemented this in `get_curvature()` method of `image_processing.py`. 
+```python
+def get_curvature(leftx, rightx, ploty):
+    """ Calculate lane curvature
+    Args:
+        leftx: left x points
+        rightx: right x points
+        ploty: y points
+    Returns:
+        left curvature, right curvature of lane and distance of vehicle from center
+    """
+    # Define conversions in x and y from pixels space to meters
+    ym_per_pix = 30/720 # meters per pixel in y dimension
+    xm_per_pix = 3.7/700 # meters per pixel in x dimension
+    y_eval = np.max(ploty)
+    # ploty = np.linspace(0, 719, num=720)
+    # Fit new polynomials to x,y in world space
+    left_fit_cr = np.polyfit(ploty*ym_per_pix, leftx*xm_per_pix, 2)
+    right_fit_cr = np.polyfit(ploty*ym_per_pix, rightx*xm_per_pix, 2)
+    # Calculate the new radii of curvature
+    left_curverad = ((1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5) / np.absolute(2*left_fit_cr[0])
+    right_curverad = ((1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5) / np.absolute(2*right_fit_cr[0])
+    # Write dist from center
+    center = 640.
+    lane_x = rightx - leftx
+    center_x = (lane_x / 2.0) + leftx
+    cms_per_pixel = 3.7 / lane_x   # US regulation lane width = 3.7m
+    distance = (center_x - center) * xm_per_pix
+
+    return (left_curverad, right_curverad, np.mean(distance * 100.0))
+```
 
 ###6. Draw lanes on image.
 
@@ -212,8 +343,8 @@ Here's a [link to my video result](./output_video/project_video.mp4)
 
 ---
 
-###Discussion
+##Discussion
 
-####1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
+###1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
 Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
